@@ -1,0 +1,6 @@
+#input
+int32 method            #current not use
+---
+float32[] axes          #n channel equal the n +1 axe
+int32[] input_buttons   #n channel equal  the n +1 button
+int32[] output_buttons  #n channel equal the n +1 button
