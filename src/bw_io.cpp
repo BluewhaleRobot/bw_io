@@ -474,7 +474,7 @@ bool StatusPublisher::setPinsService(bw_io::SetPins::Request &req, bw_io::SetPin
   for(int i=0;i<req.set_buttons.size();i++)
   {
     unsigned int bit = req.set_buttons[i];
-    if(bit>0)
+    if(bit>0 && bit<=16)
     {
       //N号输出对应N-1号
       bit = bit -1;
