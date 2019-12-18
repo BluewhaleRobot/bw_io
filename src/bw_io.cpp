@@ -101,27 +101,194 @@ void StatusPublisher::Parsepins()
 {
   unsigned int input_pins = car_status.pin_value >>16;
   unsigned int output_pins = car_status.pin_value & 0x0000ffff;
-  input_1_ = input_pins & 0x00000001;
-  input_2_ = input_pins & 0x00000002;
-  input_3_ = input_pins & 0x00000004;
-  input_4_ = input_pins & 0x00000008;
-  input_5_ = input_pins & 0x00000010;
-  input_6_ = input_pins & 0x00000020;
-  input_7_ = input_pins & 0x00000040;
-  input_8_ = input_pins & 0x00000080;
-  input_9_ = input_pins & 0x00000100;
-  input_10_ = input_pins & 0x00000200;
-  input_11_ = input_pins & 0x00000400;
+  if( (input_pins & 0x00000001)!=0)
+  {
+    input_1_ = 1;
+  }
+  else
+  {
+    input_1_ = 0;
+  }
 
-  output_1_ = output_pins & 0x00000001;
-  output_2_ = output_pins & 0x00000002;
-  output_3_ = output_pins & 0x00000004;
-  output_4_ = output_pins & 0x00000008;
-  output_5_ = output_pins & 0x00000010;
-  output_6_ = output_pins & 0x00000020;
-  output_7_ = output_pins & 0x00000040;
-  output_8_ = output_pins & 0x00000080;
-  output_9_ = output_pins & 0x00000100;
+  if( (input_pins & 0x00000002)!=0)
+  {
+    input_2_ = 1;
+  }
+  else
+  {
+    input_2_ = 0;
+  }
+
+  if( (input_pins & 0x00000004)!=0)
+  {
+    input_3_ = 1;
+  }
+  else
+  {
+    input_3_ = 0;
+  }
+
+  if( (input_pins & 0x00000008)!=0)
+  {
+    input_4_ = 1;
+  }
+  else
+  {
+    input_4_ = 0;
+  }
+
+  if( (input_pins & 0x00000010)!=0)
+  {
+    input_5_ = 1;
+  }
+  else
+  {
+    input_5_ = 0;
+  }
+
+  if( (input_pins & 0x00000020)!=0)
+  {
+    input_6_ = 1;
+  }
+  else
+  {
+    input_6_ = 0;
+  }
+
+  if( (input_pins & 0x00000040)!=0)
+  {
+    input_7_ = 1;
+  }
+  else
+  {
+    input_7_ = 0;
+  }
+
+  if( (input_pins & 0x00000080)!=0)
+  {
+    input_8_ = 1;
+  }
+  else
+  {
+    input_8_ = 0;
+  }
+
+  if( (input_pins & 0x00000100)!=0)
+  {
+    input_9_ = 1;
+  }
+  else
+  {
+    input_9_ = 0;
+  }
+
+  if( (input_pins & 0x00000200)!=0)
+  {
+    input_10_ = 1;
+  }
+  else
+  {
+    input_10_ = 0;
+  }
+
+  if( (input_pins & 0x00000400)!=0)
+  {
+    input_11_ = 1;
+  }
+  else
+  {
+    input_11_ = 0;
+  }
+
+  if( (output_pins & 0x00000001)!=0)
+  {
+    output_1_ = 1;
+  }
+  else
+  {
+    output_1_ = 0;
+  }
+
+  if( (output_pins & 0x00000002)!=0)
+  {
+    output_2_ = 1;
+  }
+  else
+  {
+    output_2_ = 0;
+  }
+
+  if( (output_pins & 0x00000004)!=0)
+  {
+    output_3_ = 1;
+  }
+  else
+  {
+    output_3_ = 0;
+  }
+
+  if( (output_pins & 0x00000008)!=0)
+  {
+    output_4_ = 1;
+  }
+  else
+  {
+    output_4_ = 0;
+  }
+
+  if( (output_pins & 0x00000010)!=0)
+  {
+    output_5_ = 1;
+  }
+  else
+  {
+    output_5_ = 0;
+  }
+
+  if( (output_pins & 0x00000020)!=0)
+  {
+    output_6_ = 1;
+  }
+  else
+  {
+    output_6_ = 0;
+  }
+
+  if( (output_pins & 0x00000040)!=0)
+  {
+    output_7_ = 1;
+  }
+  else
+  {
+    output_7_ = 0;
+  }
+
+  if( (output_pins & 0x00000080)!=0)
+  {
+    output_8_ = 1;
+  }
+  else
+  {
+    output_8_ = 0;
+  }
+
+  if( (output_pins & 0x00000100)!=0)
+  {
+    output_9_ = 1;
+  }
+  else
+  {
+    output_9_ = 0;
+  }
+
+  if( (output_pins & 0x00000200)!=0)
+  {
+    output_10_ = 1;
+  }
+  else
+  {
+    output_10_ = 0;
+  }
 
   power1_ = car_status.power1*k1_ - b1_;
   if(power1_>=-mvalue1_ && power1_<=mvalue1_) power1_ = 0.0;
@@ -306,13 +473,13 @@ bool StatusPublisher::setPinsService(bw_io::SetPins::Request &req, bw_io::SetPin
   unsigned int pin_values = 0x03ff;
   for(int i=0;i<req.set_buttons.size();i++)
   {
-    unsigned int bit = req.set_buttons[0];
+    unsigned int bit = req.set_buttons[i];
     if(bit>0)
     {
       //N号输出对应N-1号
       bit = bit -1;
       enable_pins |= (unsigned int)(1<<bit);
-      unsigned int set_value = req.button_value[0];
+      unsigned int set_value = req.button_value[i];
       unsigned int set_value1 = (unsigned int)(1<<bit);
       if(set_value>0)
       {
@@ -328,12 +495,12 @@ bool StatusPublisher::setPinsService(bw_io::SetPins::Request &req, bw_io::SetPin
   char cmd_str[10]={(char)0xcd,(char)0xeb,(char)0xd7,(char)0x06,'s',(char)0x00,(char)0x00,(char)0x00,(char)0x00,(char)0x00};
   unsigned char * char_byte;
   char_byte = (unsigned char *)&enable_pins;
-  cmd_str[5] = char_byte[0];
-  cmd_str[6] = char_byte[1];
-
-  char_byte = (unsigned char *)&pin_values;
   cmd_str[7] = char_byte[0];
   cmd_str[8] = char_byte[1];
+
+  char_byte = (unsigned char *)&pin_values;
+  cmd_str[5] = char_byte[0];
+  cmd_str[6] = char_byte[1];
 
   cmd_str[9] = cmd_str[5] + cmd_str[6] + cmd_str[7] + cmd_str[8];
   if(enable_pins>0)
