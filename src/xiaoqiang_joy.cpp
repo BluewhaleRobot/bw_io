@@ -50,7 +50,7 @@ private:
 
   ros::NodeHandle ph_, nh_;
 
-  int linear_, angular_, deadman_axis_,up_axis_,down_axis_;
+  int linear_, angular_, deadman_axis_,up_axis_,down_axis_,forward_axis_,backward_axis_,fastchange_axis_;
   double l_scale_, a_scale_;
   ros::Publisher vel_pub_;
   ros::Publisher barDetectFlag_pub_;
@@ -70,22 +70,33 @@ private:
   ros::ServiceClient read_pins_client_;
   int output_1_;
   int output_2_;
+
+  bool fastchange_axis_pressed_;
+  bool forward_axis_pressed_;
+  bool backward_axis_pressed_;
+  float last_vel_;
 };
 
 XiaoqiangTeleop::XiaoqiangTeleop():
   ph_("~"),
-  linear_(2),
-  angular_(1),
+  linear_(1),
+  angular_(2),
   deadman_axis_(1),
-  up_axis_(2),
-  down_axis_(3),
-  l_scale_(0.3),
+  fastchange_axis_(2),
+  forward_axis_(3),
+  backward_axis_(4),
+  up_axis_(5),
+  down_axis_(6),
+  l_scale_(0.2),
   a_scale_(0.5),
   enable_updown_(false)
 {
   ph_.param("axis_linear", linear_, linear_);
   ph_.param("axis_angular", angular_, angular_);
   ph_.param("axis_deadman", deadman_axis_, deadman_axis_);
+  ph_.param("axis_fastchange", fastchange_axis_, fastchange_axis_);
+  ph_.param("axis_forward", forward_axis_, forward_axis_);
+  ph_.param("axis_backward", backward_axis_, backward_axis_);
   ph_.param("axis_up", up_axis_, up_axis_);
   ph_.param("axis_down", down_axis_, down_axis_);
   ph_.param("scale_angular", a_scale_, a_scale_);
@@ -94,8 +105,14 @@ XiaoqiangTeleop::XiaoqiangTeleop():
 
   deadman_pressed_ = false;
   zero_twist_published_ = false;
+  fastchange_axis_pressed_ = false;
+  forward_axis_pressed_ = false;
+  backward_axis_pressed_ = false;
+
   up_axis_pressed_ = false;
   down_axis_pressed_ = false;
+
+  last_vel_ = 0;
 
   output_1_ = 1;
   output_2_ = 1;
@@ -113,13 +130,34 @@ XiaoqiangTeleop::XiaoqiangTeleop():
 void XiaoqiangTeleop::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
   boost::mutex::scoped_lock lock(publish_mutex_);
+  deadman_pressed_ = joy->buttons[deadman_axis_-1];
+  fastchange_axis_pressed_ = joy->buttons[fastchange_axis_-1];
+  forward_axis_pressed_ = joy->buttons[forward_axis_-1];
+  backward_axis_pressed_ = joy->buttons[backward_axis_-1];
+  up_axis_pressed_ = joy->buttons[up_axis_-1];
+  down_axis_pressed_ = joy->buttons[down_axis_-1];
+
   geometry_msgs::Twist vel;
   vel.angular.z = a_scale_*joy->axes[angular_-1];
   vel.linear.x = l_scale_*joy->axes[linear_-1];
+  if(forward_axis_pressed_)
+  {
+    vel.linear.x = vel.linear.x;
+  }
+  else if(backward_axis_pressed_)
+  {
+    vel.linear.x = - vel.linear.x;
+  }
+
+  if(fastchange_axis_pressed_)
+  {
+    vel.linear.x = -last_vel_;
+  }
+  else
+  {
+    last_vel_ = vel.linear.x;
+  }
   last_published_ = vel;
-  deadman_pressed_ = joy->buttons[deadman_axis_-1];
-  up_axis_pressed_ = joy->buttons[up_axis_-1];
-  down_axis_pressed_ = joy->buttons[down_axis_-1];
 }
 
 void XiaoqiangTeleop::publish()
@@ -127,14 +165,23 @@ void XiaoqiangTeleop::publish()
   boost::mutex::scoped_lock lock(publish_mutex_);
   if (deadman_pressed_)
   {
-    vel_pub_.publish(last_published_);
-    zero_twist_published_=false;
+    if(forward_axis_pressed_ || backward_axis_pressed_ || fastchange_axis_pressed_ || std::fabs(last_published_.angular.z)>0.1)
+    {
+      vel_pub_.publish(last_published_);
+      zero_twist_published_=false;
+    }
+    else if(!zero_twist_published_)
+    {
+      vel_pub_.publish(*new geometry_msgs::Twist());
+      zero_twist_published_=true;
+    }
   }
   else if(!deadman_pressed_ && !zero_twist_published_)
   {
     vel_pub_.publish(*new geometry_msgs::Twist());
     zero_twist_published_=true;
   }
+
 }
 
 void XiaoqiangTeleop::updateOutput()
@@ -158,7 +205,6 @@ void XiaoqiangTeleop::publish2()
   bool need_set = false;
   int output_1_set = 1;
   int output_2_set = 1;
-
   if (deadman_pressed_)
   {
     updateOutput();
